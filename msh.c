@@ -38,6 +38,31 @@ int main(){
             continue;
         }
 
+        if (strcmp(args[0],"cd")==0){    //chdir is used to change the directory
+            char *target_dir = args[1];
+            if (target_dir == NULL) {
+                target_dir = getenv("HOME"); // if the cd has no argument it will go directly to home
+            }
+                if (target_dir == NULL) {
+                    printf("cd: HOME not set\n");
+                    continue;
+                }else if(chdir(target_dir) !=0 ){
+                    perror("cd failed");
+                }
+                continue;
+            }
+        
+        if (strcmp(args[0], "help") == 0) { //this is like a manual for one who is lost and doesn't know their way around
+            printf("Built-in commands:\n");
+            printf("  cd <dir>   Change the current working directory\n");
+            printf("  help       Display this help message\n");
+            printf("  exit       Exit the shell\n");
+            continue;
+        }
+        if (strcmp(args[0], "exit") == 0) {
+            break; //used to get out of the loop
+        }
+
         pid_t pid = fork(); //fork used to create a new process (a child process) from a parent process.
         
         if(pid == 0){             //This is a child process
