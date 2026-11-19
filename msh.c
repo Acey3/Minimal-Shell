@@ -10,9 +10,10 @@ int main(){
     size_t len= 0; 
     char *input = NULL;
     char *args[MAX_ARGS];
-// a loop to enable the shell to work since when i print the prompt wtht the loop it printed then returned command to the os 
+    int last_status = 0;  //this stores the exit status of the previous command
+   // a loop to enable the shell to work since when i print the prompt wtht the loop it printed then returned command to the os 
     while(1){
-        printf("msh>");
+        printf("msh[%d]>", last_status);
         fflush(stdout); //this is used to flush the buffer/memory since sometimes when you printf they may stay in the memory
 
         if(getline(&input,&len , stdin)== -1){
@@ -72,9 +73,14 @@ int main(){
 
         }else if(pid > 0){       //This is a parent process
             int status;
-            if(waitpid(pid,&status,0) == -1){
-                perror("waitpid failed");
-            } //waiting for the childprocess to terminate so that it cannot be left to linger and be a zombie process
+            if(waitpid(pid,&status,0) == -1){ 
+                perror("waitpid failed");//waiting for the childprocess to terminate so that it cannot be left to linger and be a zombie process
+                last_status = 1;
+                } else if (WIFEXITED(status)) {
+                    last_status = WEXITSTATUS(status); // normal exit
+                } else if (WIFSIGNALED(status)) {
+                    last_status = 128 + WTERMSIG(status); //this is killed by signal eg SIGKILL
+                }
 
         }else{
             perror("fork failed");
@@ -85,6 +91,7 @@ int main(){
     free(input); // this is used to free the buffer on exit so that it doesn't leak .Since getline() allocates heap memory
 
     return 0;
+
 
 }
 
