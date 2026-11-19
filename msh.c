@@ -14,9 +14,10 @@ int main(){
               //this is used to get the input it can fit any length of input as it needs to feet then updates len of the allocated size
             if(feof(stdin)){
                 printf("\n");
+                break;
             }
-        
-        break;
+            perror("getline failed");
+            break;
         }  
         
     printf("%s",input);
