@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 #define MAX_ARGS 64
 
 int main(){
@@ -52,6 +53,27 @@ int main(){
             }
         }
 
+        // Check for output redirection '>'
+        char *outfile = NULL;
+         // O_WRONLY opens for writing only, O_CREAT makes the file if it is not there,
+                // O_TRUNC empties the file if it already has something,
+        for (int j = 0; args[j] != NULL; j++) {
+            if (strcmp(args[j], ">") == 0) {
+                if (args[j + 1] == NULL) {
+                    printf("syntax error: expected file after '>'\n");
+                    last_status = 1;
+                    outfile = (char *)-1; // mark syntax error
+                    break;
+                }
+                outfile = args[j + 1];
+                args[j] = NULL; // cut off '>' and filename so execvp doesn't pass them as arguments
+                break;
+            }
+        }
+        if (outfile == (char *)-1) {
+            continue;
+        }
+
         if (strcmp(args[0],"cd")==0){    //chdir is used to change the directory
             char *target_dir = args[1];
             if (target_dir == NULL) {
@@ -79,7 +101,20 @@ int main(){
 
         pid_t pid = fork(); //fork used to create a new process (a child process) from a parent process.
         
-        if(pid == 0){             //This is a child process
+        if(pid == 0){      //This is a child process
+            if (outfile != NULL) {
+                int fd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (fd == -1) {
+                    perror("open failed");
+                    exit(EXIT_FAILURE);
+                }
+                if (dup2(fd, STDOUT_FILENO) == -1) {
+                    perror("dup2 failed");
+                    close(fd);
+                    exit(EXIT_FAILURE);
+                }
+                close(fd); // close the extra file descriptor after duplicating onto stdout since stdout points to the file
+            }
             execvp(args[0], args);
             perror("execvp failed");
             exit(EXIT_FAILURE);
