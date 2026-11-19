@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #define MAX_ARGS 64
 
 int main(){
@@ -12,6 +13,7 @@ int main(){
     char *input = NULL;
     char *args[MAX_ARGS];
     int last_status = 0;  //this stores the exit status of the previous command
+    signal(SIGINT, SIG_IGN); //this is to make the parent shell to ignore Ctrl-C so it doesn't terminate.
    // a loop to enable the shell to work since when i print the prompt wtht the loop it printed then returned command to the os 
     while(1){
         while(waitpid(-1, NULL, WNOHANG) > 0){  //this is for waiting for background child processes, its work is to look for any 
@@ -55,8 +57,7 @@ int main(){
 
         // Check for output redirection '>'
         char *outfile = NULL;
-         // O_WRONLY opens for writing only, O_CREAT makes the file if it is not there,
-                // O_TRUNC empties the file if it already has something,
+        
         for (int j = 0; args[j] != NULL; j++) {
             if (strcmp(args[j], ">") == 0) {
                 if (args[j + 1] == NULL) {
@@ -102,8 +103,10 @@ int main(){
         pid_t pid = fork(); //fork used to create a new process (a child process) from a parent process.
         
         if(pid == 0){      //This is a child process
+             signal(SIGINT, SIG_DFL); // when Ctrl+c is pressed the parent ignores it but the child terminates from SIGINT
             if (outfile != NULL) {
-                int fd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                int fd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644); // O_WRONLY opens for writing only, O_CREAT makes the file if it is not there,
+                // O_TRUNC empties the file if it already has something
                 if (fd == -1) {
                     perror("open failed");
                     exit(EXIT_FAILURE);
