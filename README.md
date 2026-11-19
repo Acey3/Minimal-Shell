@@ -21,8 +21,8 @@ To exit the shell, type `exit` or press Ctrl-D.
 | 4 | Built-ins: `cd`, `help`, `exit` | Complete |
 | 5 | Showing the previous exit status in the prompt `msh[N]>` | Complete |
 | 6 | Background execution with trailing `&`, reaping with `WNOHANG` | Complete |
-| 7 | Output redirection with `>` (mode 0644, done in the child) | Complete (see limitations) |
-| 8 | Ctrl-C stops the foreground command but not the shell | Complete (see limitations) |
+| 7 | Output redirection with `>` (mode 0644, done in the child) | Complete  |
+| 8 | Ctrl-C stops the foreground command but not the shell | Complete  |
 
 ## Design Explanation.
 First there is a while loop which displays the prompt then it is followed by a function strtok() which
