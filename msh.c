@@ -13,6 +13,10 @@ int main(){
     int last_status = 0;  //this stores the exit status of the previous command
    // a loop to enable the shell to work since when i print the prompt wtht the loop it printed then returned command to the os 
     while(1){
+        while(waitpid(-1, NULL, WNOHANG) > 0){  //this is for waiting for background child processes, its work is to look for any 
+                                       //child background process that have finished so that it can be cleaned b4 it enters the shell
+
+        }
         printf("msh[%d]>", last_status);
         fflush(stdout); //this is used to flush the buffer/memory since sometimes when you printf they may stay in the memory
 
@@ -28,7 +32,7 @@ int main(){
         char *token = strtok(input, " \t\r\n");  // this converts string to tokens for command execution
         int i= 0;
 
-        while(token != NULL && i < MAX_ARGS){
+        while(token != NULL && i < MAX_ARGS - 1){
             args[i] = token;
             token = strtok(NULL, " \t\r\n");   //splits line on spaces and tabs
             i++;
@@ -37,6 +41,15 @@ int main(){
 
         if (i == 0){ //this is for skipping white spaces and blank lines
             continue;
+        }
+        int background = 0;  //used to check for trailing '&' so that it can run the command in the background.
+        if(strcmp(args[i-1], "&")==0){
+            background = 1;
+            args[i-1] = NULL; //used to remove '&' so it is not passed to execvp
+            i--;
+            if(i == 0){
+                continue;
+            }
         }
 
         if (strcmp(args[0],"cd")==0){    //chdir is used to change the directory
@@ -72,15 +85,22 @@ int main(){
             exit(EXIT_FAILURE);
 
         }else if(pid > 0){       //This is a parent process
+            if(background){
+                printf("[%d]\n", pid); 
+                last_status = 0;
+            }else{
             int status;
             if(waitpid(pid,&status,0) == -1){ 
-                perror("waitpid failed");//waiting for the childprocess to terminate so that it cannot be left to linger and be a zombie process
+                perror("waitpid failed");//waiting for the childprocess to terminate so that it cannot be left to roam and be a zombie process
                 last_status = 1;
                 } else if (WIFEXITED(status)) {
                     last_status = WEXITSTATUS(status); // normal exit
                 } else if (WIFSIGNALED(status)) {
                     last_status = 128 + WTERMSIG(status); //this is killed by signal eg SIGKILL
                 }
+            }
+            
+            
 
         }else{
             perror("fork failed");
