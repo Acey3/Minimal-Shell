@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #define MAX_ARGS 64
 
 int main(){
@@ -35,8 +37,24 @@ int main(){
         if (i == 0){ //this is for skipping white spaces and blank lines
             continue;
         }
+
+        pid_t pid = fork(); //fork used to create a new process (a child process) from a parent process.
+        
+        if(pid == 0){             //This is a child process
+            execvp(args[0], args);
+            perror("execvp failed");
+            exit(EXIT_FAILURE);
+
+        }else if(pid > 0){       //This is a parent process
+            int status;
+            if(waitpid(pid,&status,0) == -1){
+                perror("waitpid failed");
+            } //waiting for the childprocess to terminate so that it cannot be left to linger and be a zombie process
+
+        }else{
+            perror("fork failed");
+        }
    
-    printf("%s\n",input);
 
     }
     free(input); // this is used to free the buffer on exit so that it doesn't leak .Since getline() allocates heap memory
